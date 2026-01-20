@@ -6,6 +6,25 @@ __pycache__/
 # C extensions
 *.so
 
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+
+# Environments
+.env
+.venv/
+
+
 # Distribution / packaging
 .Python
 build/
