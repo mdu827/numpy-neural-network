@@ -99,7 +99,30 @@ class Tensor:
             _backward,
         )
         return out
+    def __sub__(self, other):
+        other = other if isinstance(other, Tensor) else Tensor(other)
 
+        def _backward():
+            if self.requires_grad:
+                Tensor._add_grad(
+                    self,
+                    Tensor.unbroadcast(out.grad, self.data.shape),
+                )
+            if other.requires_grad:
+                Tensor._add_grad(
+                    other,
+                    -Tensor.unbroadcast(out.grad, other.data.shape),  # ← ВАЖНО
+                )
+
+        out = self._create_child(
+            self.data - other.data,
+            (self, other),
+            "-",
+            _backward,
+        )
+        return out
+
+    
     def __mul__(self, other):
         other = other if isinstance(other, Tensor) else Tensor(other)
 
@@ -124,6 +147,25 @@ class Tensor:
             _backward,
         )
         return out
+    def __pow__(self, power):
+        assert isinstance(power, (int, float)), "only scalar powers supported"
+
+        def _backward():
+            if self.requires_grad:
+                grad = power * (self.data ** (power - 1)) * out.grad
+                Tensor._add_grad(
+                    self,
+                    Tensor.unbroadcast(grad, self.data.shape)
+                )
+
+        out = self._create_child(
+            self.data ** power,
+            (self,),
+            f"**{power}",
+            _backward
+        )
+        return out
+
     def __matmul__(self, other):
         other = other if isinstance(other, Tensor) else Tensor(other)
 
@@ -186,6 +228,20 @@ class Tensor:
             _backward=_backward if self.requires_grad else None,
         )
         return out
+    def relu(self):
+        out_data = np.maximum(0, self.data)
+
+        def _backward():
+            if self.requires_grad:
+                grad = (self.data > 0) * out.grad
+                Tensor._add_grad(self, grad)
+
+        return self._create_child(
+            out_data,
+            (self,),
+            "relu",
+            _backward
+        )
 
     '''
     -------------
