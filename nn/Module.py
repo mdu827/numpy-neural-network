@@ -26,11 +26,10 @@ class Module:
 
 class ReLU(Module):
     def __call__(self, x):
-        out = None  # создаём переменную для замыкания
+        out = None  
 
         def _backward():
             if x.requires_grad:
-                # используем out.grad, которое будет установлено в Tensor
                 grad = (x.data > 0) * out.grad
                 Tensor._add_grad(x, grad)
 
@@ -42,9 +41,34 @@ class ReLU(Module):
         )
         return out
 
+class MSELoss(Module):
+    def __call__(self, pred, target):
+        return ((pred - target) ** 2).mean()
+
+
+class Sigmoid(Module):
+    def __call__(self, x):
+        def sigmoid(x): return 1 / (1 + np.exp(-x))
+        out = None
+        
+        def _backward():
+            if x.requires_grad:
+                s = sigmoid(x.data)
+                grad = s * (1 - s) * out.grad
+                Tensor._add_grad(x, grad)
+        
+        out = x._create_child(
+            sigmoid(x.data),
+            (x,),
+            "sigmoid",
+            _backward
+        )
+        return out
+
+
 class Tanh(Module):
     def __call__(self, x):
-        out = None  # placeholder для замыкания
+        out = None  
 
         def _backward():
             if x.requires_grad:
@@ -52,10 +76,10 @@ class Tanh(Module):
                 Tensor._add_grad(x, grad)
 
         out = x._create_child(
-            np.tanh(x.data),  # данные после tanh
-            (x,),             # prev
-            "tanh",           # имя операции
-            _backward         # backward функция
+            np.tanh(x.data),  
+            (x,),             
+            "tanh",           
+            _backward         
         )
         return out
 
@@ -89,6 +113,7 @@ class MLP(Module):
         x = self.relu(x)
         x = self.l2(x)
         return x
+    
 class Sequential(Module):
     def __init__(self, *layers):
         self.layers = layers
