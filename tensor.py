@@ -25,6 +25,18 @@ class Tensor:
         self._op = _op
         self._backward = _backward or (lambda: None)
 
+    @staticmethod
+    def no_grad():
+        class NoGradContext:
+            def __enter__(self):
+                self.prev_state = Tensor._NO_GRAD
+                Tensor._NO_GRAD = True
+                return self
+            
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                Tensor._NO_GRAD = self.prev_state
+        
+        return NoGradContext()
     '''
     -------------
     basic properties 
@@ -276,7 +288,6 @@ class Tensor:
                 else:
                     grad = np.ones_like(self.data) * out.grad
                     if not keepdims:
-                        # Восстанавливаем удаленные оси
                         grad = grad.reshape(self.shape)
                 Tensor._add_grad(self, grad)
 
