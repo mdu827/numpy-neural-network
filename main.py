@@ -1,5 +1,6 @@
 from numpy_neural_network.tensor import Tensor
 from numpy_neural_network.nn.Module import *
+from numpy_neural_network.nn.Dropout import *
 from numpy_neural_network.optimizer.adam import Adam
 from numpy_neural_network.optimizer.sgd import SGD
 from numpy_neural_network.optimizer.momentum import Momentum
@@ -38,25 +39,29 @@ train_loader = DataLoader(X_train, y_train, batch_size=batch_size, shuffle=True)
 model = Sequential(
     Linear(X.shape[1], 128),
     ReLU(),
-    Linear(128, 64),
+    Dropout(p=0.3),
+    Linear(128, 256),
     ReLU(),
-    Linear(64, 1),
+    Dropout(p=0.3),
+    Linear(256,1),
 )
+
 with Tensor.no_grad():
     prev_pred = model(X_val)
     mse = ((prev_pred - y_val) ** 2).mean().item()
     mae = np.abs(prev_pred.data - y_val.data).mean()
+
 print("MSE and MAE before train:")
 print(f"MSE: {mse:,.1f}")
 print(f"MAE: {mae:.1f}")
 optimizer = Adam(model.parameters())
 early_stopper = EarlyStopping(
-    patience=100, 
-    min_delta=0.001,
+    patience=250, 
+    min_delta=0.01,
     restore_best_weights=True
 )
 
-for epoch in range(10000):
+for epoch in range(25_000):
     epoch_loss = 0
     n_batches = 0
     
