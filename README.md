@@ -9,7 +9,7 @@ The numpy-neural-network framework consists of three foundational layers:
 | Layer | Purpose | Key Components |
 |-------|---------|----------------|
 | Core Foundation | Automatic differentiation engine | `Tensor` class with gradient tracking |
-| Neural Network Abstraction | Building blocks for model construction | `Module`, `Linear`, `ReLU`, `Sigmoid`, `Tanh`, `Dropout`, `Sequential` |
+| Neural Network Abstraction | Building blocks for model construction | `Module`, `Linear`, `ReLU`, `Sigmoid`, `Tanh`, `Dropout`, `Sequential` , `Conv2d`, `Flatten` |
 | Optimization | Parameter update algorithms | `SGD`, `Adam`, `Momentum`, `RMSprop` |
 | Utilities | Training support tools | `DataLoader`, `EarlyStopping`, `MSELoss` |
 ## Core Concepts
@@ -35,7 +35,7 @@ Key responsibilities:
 
 Components include:
 
-- Layers: Linear (fully connected)
+- Layers: Linear (fully connected), Conv2d (2D convolution for image processing), Flatten (for converation)
 - Activations: ReLU, Sigmoid, Tanh
 - Regularization: Dropout
 - Containers: Sequential, MLP
@@ -72,6 +72,7 @@ Common interface methods:
 - Mean Squared Error (MSELoss) for regression tasks
 ***
 ## Application Example
+### Regression task with tabular data problem
 ```python
 model = Sequential(
     Linear(X.shape[1], 128),
@@ -93,6 +94,25 @@ early_stopper = EarlyStopping(
     restore_best_weights=True
 )
 ```
+### Image classification problem
+```python
+mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
+X = mnist.data.astype(np.float32).reshape(-1, 1, 28, 28)[:5000] / 255.0
+y = np.eye(10)[mnist.target.astype(np.int32)][:5000]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+# Model & DataLoader
+model = Sequential(
+    Conv2d(1, 8, 3, padding=1), ReLU(), MaxPool2d(2),
+    Conv2d(8, 16, 3, padding=1), ReLU(), MaxPool2d(2),
+    Flatten(), Linear(16*7*7, 32), ReLU(), Linear(32, 10)
+)
+
+optimizer = Adam(model.parameters(), lr=0.001)
+train_loader = DataLoader(X_train, y_train, batch_size=64)
+
+```
 ***
 ### Installation
 Step 1: Clone the repository
@@ -109,7 +129,7 @@ Running the Example
 ```
 python main.py
 ```
-Expected Output:
+Expected Output for instance:
 ```
 MSE and MAE before train:
 MSE: 1.0
